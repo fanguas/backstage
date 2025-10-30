@@ -1,88 +1,366 @@
 apiVersion: scaffolder.backstage.io/v1beta3
-# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-template
 kind: Template
 metadata:
-  name: example-nodejs-template
-  title: Example Node.js Template
-  description: An example template for the scaffolder that creates a simple Node.js service
+  name: tpc-stack-builder
+  title: The Palace Company Golden Path
+  description: "Plantilla estandarizada que define repositorios y configuraciones para crear proyectos por mercado (Ventas, Club, Operaciones) con soporte para Vue, Serverless, ECS y EKS 🚀"
+  tags:
+    - tpc
+    - golden-path
+    - frontend
+    - backend
+    - vue
+    - serverless
+    - ecs
+    - microservice
+    - kubernetes
+    - eks
+    - k8s
 spec:
   owner: user:guest
   type: service
 
-  # These parameters are used to generate the input form in the frontend, and are
-  # used to gather input data for the execution of the template.
   parameters:
-    - title: Fill in some steps
-      required:
-        - name
-      properties:
-        name:
-          title: Name
-          type: string
-          description: Unique name of the component
-          ui:autofocus: true
-          ui:options:
-            rows: 5
-    - title: Choose a location
-      required:
-        - repoUrl
-      properties:
-        repoUrl:
-          title: Repository Location
-          type: string
-          ui:field: RepoUrlPicker
-          ui:options:
-            allowedHosts:
-              - github.com
+    # 🧭 PANTALLA DE INTRODUCCIÓN
+    - title: Introducción
+      description: |
+        Esta plantilla te ayudará a crear un repositorio estandarizado según el tipo de arquitectura y mercado.
 
-  # These steps are executed in the scaffolder backend, using data that we gathered
-  # via the parameters above.
+        ---
+        **¿Qué hace esta plantilla?**
+        - Crea automáticamente un repositorio con la convención:  
+          `{Mercado}.{Producto}.{Tipo}.{Proyecto}`
+        - Aplica la estructura base (Vue, Serverless, ECS o Microservice)
+        - Registra el repositorio en el catálogo de Backstage
+        - Envía los metadatos al sistema de control interno (MongoDB)
+        - Crea automáticamente un ticket en Jira para la gestión de infraestructura
+
+        ---
+        **Instrucciones:**
+        1. Revisa esta introducción.
+        2. En el siguiente paso selecciona la arquitectura.
+        3. Completa la información del proyecto y colaboradores.
+        4. Confirma para generar el repositorio automáticamente.
+      properties: {}
+
+    # 🧩 PANTALLA DE ARQUITECTURA
+    - title: Selección de arquitectura
+      description: |
+        Selecciona el tipo de arquitectura según la necesidad del proyecto.
+
+        ### ¿Qué significa cada tipo de arquitectura?
+        - **Vue:** Frontend estático desplegado en S3 + CloudFront (ideal para aplicaciones web públicas, sin backend propio).
+        - **Serverless:** Backend con AWS Lambda y API Gateway (funciones bajo demanda, sin servidores dedicados, escalado automático).
+        - **ECS:** Contenedor Docker desplegado en Amazon ECS (orquestación de contenedores, útil para microservicios y cargas persistentes).
+        - **Microservice (EKS):** Microservicio en Kubernetes (EKS), recomendado para arquitecturas empresariales escalables y robustas.
+      required:
+        - repoType
+      properties:
+        repoType:
+          title: Tipo de arquitectura
+          type: string
+          enum:
+            - Vue
+            - Serverless
+            - ECS
+            - Microservice
+          enumNames:
+            - Vue (S3 + Cloudfront)
+            - Serverless (AWS Lambda)
+            - ECS (Contenedor para ECS)
+            - Kubernetes (Microservicio para EKS)
+          default: Microservice
+
+    # 🏢 PANTALLA DE MERCADO, PRODUCTO Y REPOSITORIO
+    - title: Configuración del mercado, producto y repositorio
+      description: |
+        Selecciona el mercado, producto y completa los datos del proyecto.  
+        El nombre del repositorio se generará automáticamente con la convención: `{Mercado}.{Producto}.{Tipo}.{Proyecto}`
+      required:
+        - market
+        - product
+        - repoDescription
+        - projectName
+        - techLead
+      properties:
+        market:
+          title: Mercado
+          type: string
+          enum:
+            - Ventas
+            - Club
+            - Operaciones
+        product:
+          title: Producto
+          type: string
+        projectName:
+          title: Nombre del proyecto
+          type: string
+        repoDescription:
+          title: Descripción del repositorio
+          type: string
+          ui:widget: textarea
+          ui:options:
+            rows: 1
+        techLead:
+          title: Tech Lead
+          type: string
+        collaborators:
+          title: Colaboradores 🧑🏻‍💻
+          type: array
+          items:
+            type: object
+            properties:
+              user:
+                type: string
+                title: Usuario de GitHub
+              access:
+                type: string
+                title: Tipo de permiso
+                enum:
+                  - pull
+                  - push
+                default: push
+            required:
+              - user
+              - access
+
+      dependencies:
+        market:
+          oneOf:
+            - properties:
+                market:
+                  const: Ventas
+                product:
+                  title: Producto (Ventas)
+                  type: string
+                  enum:
+                    - BE
+                    - GS
+                    - MVG
+                    - SC
+                    - Revenue
+                    - Rates
+                    - Restrictions
+                    - Hubspot
+                  enumNames:
+                    - BE (Booking Engine)
+                    - GS (Global Sales)
+                    - MVG (Moon Vacation Gateway)
+                    - SC (Sales Center)
+                    - Revenue
+                    - Rates
+                    - Restrictions
+                    - Hubspot
+              required:
+                - product
+            - properties:
+                market:
+                  const: Club
+                product:
+                  title: Producto (Club)
+                  type: string
+                  enum:
+                    - Postventa
+                    - Preventa
+                    - CallCenter
+                    - PalaceElite
+                    - Contabilidad
+                    - Finanzas
+                    - Comisiones
+                  enumNames:
+                    - Postventa
+                    - Preventa
+                    - Call Center
+                    - Palace Elite
+                    - Contabilidad
+                    - Finanzas
+                    - Comisiones
+              required:
+                - product
+            - properties:
+                market:
+                  const: Operaciones
+                product:
+                  title: Producto (Operaciones)
+                  type: string
+                  enum:
+                    - Payments
+                    - Sistur
+                    - ExperienciasDigitales
+                    - Gastronomy
+                  enumNames:
+                    - Payments
+                    - Sistur
+                    - Experiencias Digitales
+                    - Gastronomy
+              required:
+                - product
+
   steps:
-    # Each step executes an action, in this case one templates files into the working directory.
-    - id: fetch-base
-      name: Fetch Base
+    # Fetch content según arquitectura
+    - id: fetch-vue
+      name: Fetch Vue Frontend Content
       action: fetch:template
+      if: ${{ parameters.repoType === 'Vue' }}
       input:
-        url: ./content
+        url: ./content/vue
         values:
-          name: ${{ parameters.name }}
+          market: ${{ parameters.market }}
+          product: ${{ parameters.product }}
+          repoType: ${{ parameters.repoType }}
+          repoName: ${{ parameters.market }}.${{ parameters.product }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+          projectName: ${{ parameters.projectName | lower }}
+          techLead: ${{ parameters.techLead }}
+          repoDescription: ${{ parameters.repoDescription }}
+          collaborators: ${{ parameters.collaborators }}
 
-    # This step publishes the contents of the working directory to GitHub.
-    # If you or your organization prefer another default branch name over 'main'
-    # you can change that here.
+    - id: fetch-serverless
+      name: Fetch Serverless Content
+      action: fetch:template
+      if: ${{ parameters.repoType === 'Serverless' }}
+      input:
+        url: ./content/serverless
+        values:
+          market: ${{ parameters.market }}
+          product: ${{ parameters.product }}
+          repoType: ${{ parameters.repoType }}
+          repoName: ${{ parameters.market }}.${{ parameters.product }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+          projectName: ${{ parameters.projectName | lower }}
+          techLead: ${{ parameters.techLead }}
+          repoDescription: ${{ parameters.repoDescription }}
+          collaborators: ${{ parameters.collaborators }}
+
+    - id: fetch-ecs
+      name: Fetch ECS Container Content
+      action: fetch:template
+      if: ${{ parameters.repoType === 'ECS' }}
+      input:
+        url: ./content/ecs
+        values:
+          market: ${{ parameters.market }}
+          product: ${{ parameters.product }}
+          repoType: ${{ parameters.repoType }}
+          repoName: ${{ parameters.market }}.${{ parameters.product }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+          projectName: ${{ parameters.projectName | lower }}
+          techLead: ${{ parameters.techLead }}
+          repoDescription: ${{ parameters.repoDescription }}
+          collaborators: ${{ parameters.collaborators }}
+
+    - id: fetch-microservice
+      name: Fetch EKS Microservice Content
+      action: fetch:template
+      if: ${{ parameters.repoType === 'Microservice' }}
+      input:
+        url: ./content/eks
+        values:
+          market: ${{ parameters.market }}
+          product: ${{ parameters.product }}
+          repoType: ${{ parameters.repoType }}
+          repoName: ${{ parameters.market }}.${{ parameters.product }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+          projectName: ms-${{ parameters.projectName | lower }}
+          techLead: ${{ parameters.techLead }}
+          repoDescription: ${{ parameters.repoDescription }}
+          collaborators: ${{ parameters.collaborators }}
+
+    # Publicar repo
     - id: publish
-      name: Publish
+      name: Publish to GitHub
       action: publish:github
       input:
-        description: This is ${{ parameters.name }}
-        repoUrl: ${{ parameters.repoUrl }}
-        defaultBranch: 'main'
+        description: ${{ parameters.repoDescription }}
+        repoUrl: github.com?owner=the-palace-company&repo=${{ parameters.market }}.${{ parameters.product }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+        repoVisibility: internal
+        defaultBranch: main
+        protectDefaultBranch: false
+        collaborators: ${{ parameters.collaborators }}
+        topics:
+          - ${{ parameters.repoType | lower }}
+          - ${{ parameters.market | lower }}
+          - ${{ parameters.product | lower }}
+          - tpc
+        repoVariables:
+          PROJECT_NAME: ${{ parameters.projectName | lower }}
 
-    # The final step is to register our new component in the catalog.
+    # Registrar en catálogo
     - id: register
-      name: Register
+      name: Register in Backstage Catalog
       action: catalog:register
       input:
         repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
-        catalogInfoPath: '/catalog-info.yaml'
+        catalogInfoPath: "/catalog-info.yaml"
+        optional: true
 
-    # Let's notify the user that the template has completed using the Notification action
-    - id: notify
-      name: Notify
-      action: notification:send
+    # Trigger workflow compartido
+    - id: trigger-shared-workflow
+      name: Register data in MongoDB
+      action: github:actions:dispatch
       input:
-        recipients: entity
-        entityRefs:
-          - user:default/guest
-        title: 'Template executed'
-        info: 'Your template has been executed'
-        severity: 'normal'
+        repoUrl: github.com?owner=fanguas&repo=infra-nexus
+        workflowId: register-repository.yaml
+        branchOrTagName: main
+        workflowInputs:
+          repository: ${{ parameters.market }}.${{ parameters.product }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+          description: ${{ parameters.repoDescription }}
+          tech_lead: ${{ parameters.techLead }}
+          market: ${{ parameters.market }}
+          product: ${{ parameters.product }}
+          repo_type: ${{ parameters.repoType }}
 
-  # Outputs are displayed to the user after a successful execution of the template.
+    - id: create-jira-ticket
+      name: Create Jira Ticket
+      action: http:backstage:request
+      input:
+        method: POST
+        path: "/proxy/jira/rest/api/3/issue"
+        headers:
+          content-type: "application/json"
+        body:
+          fields:
+            summary: "Crear infraestructura para ${{ parameters.market }}.${{ parameters.product }}.${{ parameters.repoType }}.${{ parameters.projectName }}"
+            description:
+              type: doc
+              version: 1
+              content:
+                - type: paragraph
+                  content:
+                    - type: text
+                      text: |
+                        Repositorio generado automáticamente desde Backstage 🚀
+
+                        Se ha creado un nuevo repositorio en GitHub. Por favor proceder con la creación de la infraestructura correspondiente.
+
+                        Datos del proyecto:
+
+                        Repositorio: ${{ steps.publish.output.remoteUrl }}
+                        Descripción: ${{ parameters.repoDescription }}
+                        TechLead: ${{ parameters.techLead }}
+                        Mercado: ${{ parameters.market }}
+                        Producto: ${{ parameters.product }}
+                        Tipo: ${{ parameters.repoType }}
+            project:
+              key: SPR
+            issuetype:
+              name: Tarea
+            assignee:
+              id: "712020:111959b9-b3ac-4352-8c5d-c5e27fa8cd91"
+
+    - id: set-jira-url
+      name: Set Jira URL
+      action: debug:log
+      input:
+        message: "https://palaceresorts.atlassian.net/browse/${{ steps['create-jira-ticket'].output.body.key }}"
+      output:
+        jiraUrl: "https://palaceresorts.atlassian.net/browse/${{ steps['create-jira-ticket'].output.body.key }}"
+
   output:
     links:
-      - title: Repository
+      - title: Repositorio
+        icon: github
         url: ${{ steps['publish'].output.remoteUrl }}
-      - title: Open in catalog
+      - title: Abrir en catálogo
         icon: catalog
         entityRef: ${{ steps['register'].output.entityRef }}
+      - title: Ticket en Jira
+        icon: jira
+        url: https://palaceresorts.atlassian.net/browse/${{ steps['create-jira-ticket'].output.body.key }}

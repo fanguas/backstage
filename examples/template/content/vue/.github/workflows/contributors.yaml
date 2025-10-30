@@ -1,0 +1,13 @@
+name: Update contributors 🧑🏻‍💻
+
+on:
+  schedule:
+    - cron: "0 12 * * *" # 6 AM hora Ciudad de México (UTC-6)
+  workflow_dispatch:
+
+jobs:
+  contributors:
+    uses: the-palace-company/github-actions/.github/workflows/commons-contributors.yml@main
+    with:
+      base-branch: ${{ github.event.repository.default_branch }}
+    secrets: inherit
