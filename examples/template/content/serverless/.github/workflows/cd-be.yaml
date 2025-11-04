@@ -1,4 +1,4 @@
-name: CD - sistur-be
+name: Continuous Deployment (CD) 🚀
 
 on:
   workflow_dispatch:
@@ -6,11 +6,10 @@ on:
       environment:
         description: 'Selecciones el/los entornos a desplegar'
         required: true
-        default: 'dev'
+        default: 'qa'
         type: choice
         options:
           - qa
-          - dev
           - prod
       artifact:
         description: 'Selecciona el artefacto'
