@@ -1,0 +1,30 @@
+name: Continuous Integration (CI) 💡
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'version.json'
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+
+run-name: CI - ${{ values.repoType }} - ${{ values.projectName }}
+
+jobs:
+  CI-PR:
+    name: CI - Sonarcloud analysis
+    if: github.event_name == 'pull_request'
+    uses: the-palace-company/github-actions/.github/workflows/ci-eks-pull-request.yml@main
+    secrets: inherit
+
+  CI-MAIN:
+    name: CI - Building artifacts
+    if: github.event_name == 'push'
+    uses: the-palace-company/github-actions/.github/workflows/ci-eks-main.yml@main
+    secrets: inherit

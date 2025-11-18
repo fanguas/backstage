@@ -1,0 +1,26 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ${{ values.repoName }}
+  title: Backend ${{ values.repoName }}
+  description: |
+    ${{ values.repoDescription }}
+  owner: ${{ values.market | lower }}-${{ values.product | lower }}
+  tags:
+    - ${{ values.market | lower }}
+    - ${{ values.product | lower }}
+    - ${{ values.projectName | lower }}
+  links:
+    - url: https://github.com/the-palace-company/${{ values.repoName }}
+      title: Repositorio GitHub
+      icon: github
+    - url: https://github.com/the-palace-company/${{ values.repoName }}/blob/main/README.md
+      title: Documentacion Oficial
+      icon: docs
+  annotations:
+    backstage.io/techdocs-ref: dir:.
+    github.com/project-slug: the-palace-company/${{ values.repoName }}
+spec:
+  owner: ${{ values.market | lower }}-${{ values.product | lower }}
+  type: service
+  lifecycle: active

@@ -1,0 +1,325 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: tpc-stack-builder
+  title: TPC Golden Path 🧑🏻‍💻🚀
+  description: "Golden Path que automatiza la creación de repositorios base conforme a las arquitecturas definidas por The Palace Company: Vue, Serverless, ECS y EKS."
+  tags:
+    - tpc
+    - golden-path
+    - frontend
+    - backend
+    - vue
+    - serverless
+    - ecs
+    - microservice
+    - kubernetes
+    - eks
+    - k8s
+    - docker
+    - aws
+    - repository
+spec:
+  owner: user:guest
+  type: service
+
+  parameters:
+    # 🧭 PANTALLA DE INTRODUCCIÓN
+    - title: Introducción
+      description: |
+        Esta plantilla te permite generar repositorios alineados a las arquitecturas utilizadas en The Palace Company: Vue, Serverless, ECS y EKS.
+
+        ---
+        **¿Qué realiza esta plantilla?**
+        - Automatiza la creación de repositorios bajo la convención corporativa: `{Mercado}.{Producto}.{Tipo}.{Proyecto}`.
+        - Aplica la estructura base recomendada para cada stack tecnológico (Vue, Serverless, ECS o EKS).
+        - Asigna automáticamente los permisos de acceso al team de GitHub correspondiente, según el producto seleccionado.
+        - Registra el proyecto en el catálogo centralizado de Backstage para su visibilidad y gestión.
+        - Registra y almacena los metadatos del proyecto en el sistema de control interno (MongoDB) para garantizar la trazabilidad y auditoría corporativa.
+        - Genera automáticamente un ticket en Jira y notifica vía Microsoft Teams al equipo responsable, asegurando la asignación y seguimiento oportuno de la solicitud de infraestructura.
+
+        ---
+        **¿Cómo funciona?**
+        1. Lee esta introducción.
+        2. Selecciona el tipo de arquitectura que mejor se adapta a tu proyecto.
+        3. Completa los datos clave del mercado, producto y equipo.
+        4. Confirma y deja que la automatización haga su trabajo: tu repositorio estará listo en minutos, completamente integrado y gestionado bajo los lineamientos de The Palace Company.
+      properties: {}
+
+    # 🧩 PANTALLA DE ARQUITECTURA
+    - title: Selección de arquitectura
+      description: |
+        Selecciona el tipo de arquitectura de tu aplicación según los requerimientos del proyecto.
+
+        ### ¿Qué significa cada tipo de arquitectura?
+        - Vue: Frontend estático desplegado en S3 + CloudFront.
+        - Serverless: Backend sin servidores, implementado con AWS API Gateway y Lambda (usando Serverless Framework).
+        - ECS: Aplicación en contenedor Docker desplegada en Amazon ECS.
+        - EKS: Microservicio orquestado en Kubernetes (Amazon EKS).
+      required:
+        - repoType
+      properties:
+        repoType:
+          title: Tipo de arquitectura
+          type: string
+          enum:
+            - Vue
+            - Serverless
+            - ECS
+            - Microservice
+          enumNames:
+            - Vue (Frontend en S3 + CloudFront)
+            - Serverless (AWS Lambda + API Gateway)
+            - Contenedor Docker en Amazon ECS
+            - Microservicio en Kubernetes en Amazon EKS
+
+    # 🏢 PANTALLA DE MERCADO Y PRODUCTO
+    - title: Ingresa los datos del mercado y producto
+      description: |
+        Selecciona el mercado, producto y completa los datos del proyecto.  
+        El nombre del repositorio se generará automáticamente con la convención: `{Mercado}.{Producto}.{Tipo}.{Proyecto}`
+      required:
+        - market
+        - product
+        - repoDescription
+        - projectName
+        - techLead
+      properties:
+        market:
+          title: Mercado
+          type: string
+          enum:
+            - Ventas
+            - Club
+            - Operaciones
+        product:
+          title: Producto
+          type: string
+        projectName:
+          title: Nombre del proyecto
+          type: string
+        repoDescription:
+          title: Descripción breve del proyecto
+          type: string
+          ui:widget: textarea
+          ui:options:
+            rows: 1
+        techLead:
+          title: Tech Lead
+          type: string
+          format: email
+          description: "Por favor, ingresa una dirección de correo electrónico válida con dominio @thepalacecompany.com."
+
+      dependencies:
+        market:
+          oneOf:
+            - properties:
+                market:
+                  const: Ventas
+                product:
+                  title: Producto
+                  type: string
+                  enum:
+                    - booking-engine|BE
+                    - crs|CRS
+                    - global-sales|GS
+                    - hubspot|HubSpot
+                    - mare-design-system|MDS
+                    - moon-vacation-gateway|MVG
+                    - rates|Rates
+                    - restrictions|Restrictions
+                    - revenue|Revenue
+                    - sales-center|SC
+                  enumNames:
+                    - Booking Engine
+                    - CRS
+                    - Global Sales
+                    - HubSpot
+                    - Mare Design System
+                    - Moon Vacation Gateway
+                    - Rates
+                    - Restrictions
+                    - Revenue
+                    - Sales Center
+              required:
+                - product
+            - properties:
+                market:
+                  const: Club
+                product:
+                  title: Producto
+                  type: string
+                  enum:
+                    - call-center|CC
+                    - comisiones|Comisiones
+                    - contabilidad-y-finanzas|CF
+                    - palace-elite|PE
+                    - postventa|Postventa
+                    - preventa|Preventa
+                  enumNames:
+                    - Call Center
+                    - Comisiones
+                    - Finanzas
+                    - Palace Elite
+                    - Postventa
+                    - Preventa
+              required:
+                - product
+            - properties:
+                market:
+                  const: Operaciones
+                product:
+                  title: Producto
+                  type: string
+                  enum:
+                    - experiencias-digitales|ED
+                    - gastronomy|Gastronomy
+                    - payments|Payments
+                    - servicios-turisticos|ST
+                    - servicios-interfaz-financiero|SIF
+                    - sistur|Sistur
+                  enumNames:
+                    - Experiencias Digitales
+                    - Gastronomy
+                    - Payments
+                    - Servicios Turísticos
+                    - Servicios Interfaces Financieros
+                    - Sistur
+              required:
+                - product
+
+  steps:
+    # Asignar variables desde parámetros
+    - id: assign-variables
+      name: Assign variables from parameters
+      action: roadiehq:utils:jsonata
+      input:
+        data:
+          item: ${{ parameters.product }}
+        expression: "(
+          $githubTeam := $substringBefore($.item, '|');
+          $repositorio := $substringAfter($.item, '|');
+          {
+          'nombreLargo': $githubTeam,
+          'nombreCorto': $repositorio
+          }
+          )"
+
+    # Fetch content según arquitectura
+    - id: fetch-vue
+      name: Fetch Vue Frontend Content
+      action: fetch:template
+      if: ${{ parameters.repoType === 'Vue' }}
+      input:
+        url: ./content/vue
+        values:
+          market: ${{ parameters.market }}
+          product: ${{ steps['assign-variables'].output.result.nombreCorto }}
+          repoType: ${{ parameters.repoType }}
+          repoName: ${{ parameters.market }}.${{ steps['assign-variables'].output.result.nombreCorto }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+          projectName: ${{ parameters.projectName | lower }}
+          techLead: ${{ parameters.techLead }}
+          repoDescription: ${{ parameters.repoDescription }}
+
+    - id: fetch-serverless
+      name: Fetch Serverless Content
+      action: fetch:template
+      if: ${{ parameters.repoType === 'Serverless' }}
+      input:
+        url: ./content/serverless
+        values:
+          market: ${{ parameters.market }}
+          product: ${{ steps['assign-variables'].output.result.nombreCorto }}
+          repoType: ${{ parameters.repoType }}
+          repoName: ${{ parameters.market }}.${{ steps['assign-variables'].output.result.nombreCorto }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+          projectName: ${{ parameters.projectName | lower }}
+          techLead: ${{ parameters.techLead }}
+          repoDescription: ${{ parameters.repoDescription }}
+
+    - id: fetch-ecs
+      name: Fetch ECS Container Content
+      action: fetch:template
+      if: ${{ parameters.repoType === 'ECS' }}
+      input:
+        url: ./content/ecs
+        values:
+          market: ${{ parameters.market }}
+          product: ${{ steps['assign-variables'].output.result.nombreCorto }}
+          repoType: ${{ parameters.repoType }}
+          repoName: ${{ parameters.market }}.${{ steps['assign-variables'].output.result.nombreCorto }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+          projectName: ${{ parameters.projectName | lower }}
+          techLead: ${{ parameters.techLead }}
+          repoDescription: ${{ parameters.repoDescription }}
+
+    - id: fetch-microservice
+      name: Fetch EKS Microservice Content
+      action: fetch:template
+      if: ${{ parameters.repoType === 'Microservice' }}
+      input:
+        url: ./content/eks
+        values:
+          market: ${{ parameters.market }}
+          product: ${{ steps['assign-variables'].output.result.nombreCorto }}
+          repoType: ${{ parameters.repoType }}
+          repoName: ${{ parameters.market }}.${{ steps['assign-variables'].output.result.nombreCorto }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+          projectName: ms-${{ parameters.projectName | lower }}
+          techLead: ${{ parameters.techLead }}
+          repoDescription: ${{ parameters.repoDescription }}
+
+    # Generar repositorio
+    - id: publish
+      name: Publish to GitHub
+      action: publish:github
+      input:
+        description: ${{ parameters.repoDescription }}
+        repoUrl: github.com?owner=the-palace-company&repo=${{ parameters.market }}.${{ steps['assign-variables'].output.result.nombreCorto }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+        repoVisibility: internal
+        defaultBranch: main
+        protectDefaultBranch: false
+        gitCommitMessage: "initial commit 🧑🏻‍💻"
+        gitAuthorName: "Backstage Bot"
+        gitAuthorEmail: "backstage@thepalacecompany.com"
+        collaborators:
+          - team: the-palace-company/${{ steps['assign-variables'].output.result.nombreLargo }}
+            access: maintain
+        topics:
+          - ${{ parameters.market | lower }}
+          - ${{ steps['assign-variables'].output.result.nombreCorto | lower }}
+          - ${{ parameters.repoType | lower }}
+          - tpc
+        repoVariables:
+          PROJECT_NAME: ${{ parameters.projectName | lower }}
+
+    # Registrar en catálogo
+    - id: register
+      name: Register in Backstage Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: "/catalog-info.yaml"
+        optional: true
+
+    # Trigger workflow de onboarding
+    - id: trigger-workflow
+      name: Trigger Onboarding Workflow
+      action: github:actions:dispatch
+      input:
+        repoUrl: github.com?owner=fanguas&repo=devops-nexus
+        workflowId: onboard-repository.yaml
+        branchOrTagName: main
+        workflowInputs:
+          repository: ${{ parameters.market }}.${{ steps['assign-variables'].output.result.nombreCorto }}.${{ parameters.repoType }}.${{ parameters.projectName }}
+          description: ${{ parameters.repoDescription }}
+          market: ${{ parameters.market }}
+          product: ${{ steps['assign-variables'].output.result.nombreCorto }}
+          tech_lead: ${{ parameters.techLead }}
+          repo_type: ${{ parameters.repoType }}
+
+  output:
+    links:
+      - title: Repositorio
+        icon: github
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Abrir en catálogo
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}

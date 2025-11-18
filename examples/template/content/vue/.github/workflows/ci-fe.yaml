@@ -1,0 +1,44 @@
+name: Continuous Integration (CI) 💡
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Selecciones el entorno a desplegar'
+        required: true
+        default: 'qa'
+        type: choice
+        options:
+          - qa
+          - prod
+      version:
+        description: 'Ingrese la version a desplegar'
+        required: true
+        type: string
+
+run-name: CI - ${{ values.repoType }} - ${{ values.projectName }}
+
+jobs:
+  CI-PR:
+    name: CI - Sonarcloud analysis
+    if: github.event_name == 'pull_request'
+    uses: the-palace-company/github-actions/.github/workflows/ci-vue-pull-request.yml@main
+    secrets: inherit
+
+  CI-MAIN:
+    name: CI - Building artifacts
+    if: github.event_name == 'workflow_dispatch'
+    uses: the-palace-company/github-actions/.github/workflows/commons-build-and-push-vue.yml@main
+    with:
+      environment: ${{ '${{ inputs.environment }}' }}
+      version: ${{ '${{ inputs.version }}' }}
+      use_npmrc: 'true'
+      vue-version: 'vue2'
+    secrets: inherit
